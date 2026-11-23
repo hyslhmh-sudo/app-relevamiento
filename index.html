@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D313F">
+<title>Relevamiento de edificios · Red Trelew y Rawson</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul:#0D313F; --patagonia:#5894A7; --patagonia-claro:#e3eef2;
+    --texto:#3d4a52; --texto-suave:#6b7a83; --fondo:#f3f6f8; --borde:#d9e2e7; --blanco:#fff;
+    --cumple:#d4edda; --cumple-t:#1e6b34; --parcial:#fff3cd; --parcial-t:#8a6300;
+    --nocumple:#f8d7da; --nocumple-t:#9b1c2a; --noaplica:#e9ecef; --noaplica-t:#55606a;
+    --rojo:#b3261e; --radio:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:var(--texto);background:var(--fondo);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+  button,input,select,textarea{font-family:inherit;font-size:15px;color:inherit}
+  header{position:sticky;top:0;z-index:20;background:var(--azul);color:#fff;padding:10px 14px calc(10px) ;padding-top:calc(10px + env(safe-area-inset-top))}
+  .barra{display:flex;align-items:center;gap:8px}
+  .barra h1{font-size:16px;font-weight:700;margin:0;flex:1;line-height:1.2}
+  .barra h1 small{display:block;font-weight:500;font-size:12px;opacity:.75}
+  .icono{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:10px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;font-size:18px}
+  .estado-red{font-size:12px;margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .punto{width:8px;height:8px;border-radius:50%;display:inline-block;background:#7bd389}
+  .punto.off{background:#f0a500}
+  main{max-width:760px;margin:0 auto;padding:14px 12px 120px}
+  h2{font-size:18px;color:var(--azul);margin:6px 0 10px}
+  h3{font-size:14px;color:var(--patagonia);text-transform:uppercase;letter-spacing:.04em;margin:22px 4px 8px}
+  .tarjeta{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio);padding:14px;margin-bottom:10px}
+  .fila{display:flex;gap:8px;align-items:center}
+  .crece{flex:1;min-width:0}
+  .suave{color:var(--texto-suave);font-size:13px}
+  .chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--patagonia-claro);color:var(--azul);margin-right:4px}
+  .chip.rojo{background:var(--nocumple);color:var(--nocumple-t)}
+  .boton{border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;min-height:46px}
+  .boton.sec{background:var(--patagonia-claro);color:var(--azul)}
+  .boton.linea{background:#fff;border:1.5px solid var(--borde);color:var(--azul)}
+  .boton.ancho{width:100%}
+  .boton:disabled{opacity:.45}
+  input[type=text],input[type=number],input[type=date],input[type=url],input[type=password],input[type=search],select,textarea{width:100%;border:1.5px solid var(--borde);border-radius:10px;padding:11px 12px;background:#fff;min-height:46px}
+  textarea{min-height:70px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--patagonia);border-color:var(--patagonia)}
+  label.et{display:block;font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--azul)}
+  .avance{height:8px;background:var(--borde);border-radius:99px;overflow:hidden}
+  .avance > i{display:block;height:100%;background:var(--patagonia)}
+  .edif{cursor:pointer}
+  .edif .nombre{font-weight:700;color:var(--azul)}
+  .aviso{background:#fff7e0;border:1px solid #f0d58a;color:#6b5200;border-radius:12px;padding:12px;margin-bottom:12px}
+  .aviso.ok{background:var(--cumple);border-color:#a9d8b5;color:var(--cumple-t)}
+  .modos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .modo{background:#fff;border:1.5px solid var(--borde);border-radius:14px;padding:12px;text-align:left;cursor:pointer;min-height:84px}
+  .modo b{display:block;color:var(--azul);font-size:15px}
+  .modo span{font-size:12px;color:var(--texto-suave)}
+  .modo .cuenta{font-size:13px;font-weight:700;color:var(--patagonia);margin-top:4px;display:block}
+  /* Tarjetas de ítems */
+  .item{border-left:6px solid var(--borde)}
+  .item.e-cumple{border-left-color:#3aa55a}
+  .item.e-parcial{border-left-color:#e0a800}
+  .item.e-nocumple{border-left-color:#d64550}
+  .item.e-noaplica,.item.e-sd{border-left-color:#9aa5ad}
+  .item .cod{font-weight:700;color:var(--patagonia);font-size:13px}
+  .item .titulo{font-weight:700;color:var(--azul);margin:2px 0 4px}
+  .anterior{background:var(--fondo);border-radius:10px;padding:10px;margin:10px 0;font-size:14px}
+  .anterior .suave{font-size:12px}
+  .estados{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+  .est{border:1.5px solid var(--borde);background:#fff;border-radius:10px;padding:10px 4px;font-weight:600;font-size:13px;cursor:pointer;min-height:44px;position:relative}
+  .est[data-v="Cumple"].on{background:var(--cumple);color:var(--cumple-t);border-color:#3aa55a}
+  .est[data-v="Parcial"].on{background:var(--parcial);color:var(--parcial-t);border-color:#e0a800}
+  .est[data-v="No cumple"].on{background:var(--nocumple);color:var(--nocumple-t);border-color:#d64550}
+  .est[data-v="No aplica"].on,.est[data-v="s/d"].on,.est[data-v="A verificar"].on{background:var(--noaplica);color:var(--noaplica-t);border-color:#9aa5ad}
+  .est.prop::after{content:"propuesto";position:absolute;top:-8px;right:4px;font-size:10px;background:var(--patagonia);color:#fff;padding:0 5px;border-radius:6px}
+  .sn{display:flex;gap:6px}
+  .sn button{flex:1;border:1.5px solid var(--borde);background:#fff;border-radius:10px;min-height:44px;font-weight:600;cursor:pointer}
+  .sn button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .multi{display:flex;flex-wrap:wrap;gap:6px}
+  .multi button{border:1.5px solid var(--borde);background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .multi button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .frac{display:flex;gap:6px;align-items:center}
+  .frac input{text-align:center}
+  .regla{font-size:11px;color:var(--texto-suave);font-weight:500}
+  .regla.mal{color:var(--rojo);font-weight:700}
+  .regla.bien{color:var(--cumple-t);font-weight:700}
+  .fotos{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .fotos .mini{width:64px;height:64px;border-radius:8px;background:#ddd center/cover;position:relative;display:grid;place-items:center;font-size:11px}
+  .fotos .mini button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--rojo);color:#fff;font-size:12px;cursor:pointer}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--patagonia)}
+  details p{margin:6px 0;font-size:13px}
+  .pie-fijo{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--borde);padding:10px 12px calc(10px + env(safe-area-inset-bottom));z-index:15}
+  .pie-fijo .in{max-width:760px;margin:0 auto;display:flex;gap:8px;align-items:center}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
+  .tabs button{white-space:nowrap;border:1.5px solid var(--borde);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}
+  .tabs button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:var(--azul);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+  footer.logo{text-align:center;margin:30px 0 10px}
+  footer.logo img{width:75%;max-width:520px;height:auto}
+  footer.logo p{font-size:11px;color:var(--texto-suave);margin:4px 0}
+  .oculto{display:none!important}
+  @media (min-width:700px){ .modos{grid-template-columns:repeat(3,1fr)} .estados{grid-template-columns:repeat(6,1fr)} }
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <button class="icono oculto" id="btnVolver" aria-label="Volver">←</button>
+    <h1 id="tituloBarra">Relevamiento de edificios<small>Red Trelew y Rawson · HySL</small></h1>
+    <button class="icono" id="btnAyuda" aria-label="Ayuda">?</button>
+    <button class="icono" id="btnAjustes" aria-label="Ajustes">⚙</button>
+  </div>
+  <div class="estado-red"><span class="punto" id="punto"></span><span id="txtRed">En línea</span><span id="txtCola"></span></div>
+</header>
+<main id="vista"></main>
+<div class="pie-fijo oculto" id="pie"><div class="in" id="pieIn"></div></div>
+
+<script>
+/* =========================================================
+   App de relevamiento de edificios · Versión 0 (23/11/2026)
+   Servicio de Higiene y Seguridad Laboral · Belén Pellegrini
+   ========================================================= */
+
+const VERSION = '0';
+const ESTADOS = ['Cumple','Parcial','No cumple','No aplica','A verificar','s/d'];
+const FUENTES = ['Visita','Entrevista','Documento','Base'];
+const MAX_FOTOS = 5;
+
+/* ---------- Almacenamiento en el dispositivo (IndexedDB) ---------- */
+const db = {
+  _p: null,
+  abrir(){ return this._p ||= new Promise((ok, mal) => {
+    const r = indexedDB.open('relevamiento-edificios', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error);
+  });},
+  async get(k){ const d = await this.abrir(); return new Promise((ok,mal)=>{ const t=d.transaction('kv').objectStore('kv').get(k); t.onsuccess=()=>ok(t.result); t.onerror=()=>mal(t.error);}); },
+  async set(k,v){ const d = await this.abrir(); return new Promise((ok,mal)=>{ const t=d.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=()=>ok(); t.onerror=()=>mal(t.error);}); },
+  async del(k){ const d = await this.abrir(); return new Promise((ok,mal)=>{ const t=d.transaction('kv','readwrite'); t.objectStore('kv').delete(k); t.oncomplete=()=>ok(); t.onerror=()=>mal(t.error);}); }
+};
+
+const S = { config:{url:'',clave:''}, datos:null, borradores:{}, cola:[], pos:null, vista:'inicio', edificio:null, modo:null, filtro:{texto:'',red:'',orden:'faltantes'}, soloPend:false };
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hoy = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const fechaAr = iso => iso ? iso.split('-').reverse().join('/') : '';
+const pct = v => v==null ? 's/d' : Math.round((v>1?v/100:v)*100)+' %';
+const claseEstado = e => ({'Cumple':'e-cumple','Parcial':'e-parcial','No cumple':'e-nocumple','No aplica':'e-noaplica','s/d':'e-sd','A verificar':'e-sd'}[e]||'');
+let tToast; function toast(m){ let t=$('.toast'); if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t);} t.textContent=m; t.classList.remove('oculto'); clearTimeout(tToast); tToast=setTimeout(()=>t.classList.add('oculto'),3200); }
+function distancia(a,b,c,d){ const R=6371, r=x=>x*Math.PI/180; const dl=r(c-a), dn=r(d-b); const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function nuevoId(cod,item){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return 'APP-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())+'-'+cod.replace(/[^A-Z0-9]/gi,'').slice(-4)+'-'+item+'-'+Math.random().toString(36).slice(2,6); }
+
+/* ---------- Campos de carga (columna «Campos de carga (app)» de ITEMS) ----------
+   Formato: Etiqueta|tipo|regla; Etiqueta|tipo|regla
+   Tipos: txt, num, sn, fecha, gps, frac, lista:A/B/C, multi:A/B/C
+   Reglas (opcionales, para proponer el estado): =Sí, =No, =Bueno, >80, >=120, <=0, =100 (frac: porcentaje) */
+function parsearCampos(spec){
+  if(!spec) return [{id:'f0',etiqueta:'Dato',tipo:'txt'}];
+  return spec.split(';').map(s=>s.trim()).filter(Boolean).map((s,i)=>{
+    const [etiqueta,tipoRaw='txt',regla=''] = s.split('|').map(x=>x.trim());
+    let tipo=tipoRaw, opciones=[];
+    if(tipoRaw.startsWith('lista:')){ tipo='lista'; opciones=tipoRaw.slice(6).split('/').map(x=>x.trim()); }
+    if(tipoRaw.startsWith('multi:')){ tipo='multi'; opciones=tipoRaw.slice(6).split('/').map(x=>x.trim()); }
+    return {id:'f'+i, etiqueta, tipo, opciones, regla};
+  });
+}
+function evaluar(campo, v){ // 1 cumple · 0 no cumple · 0.5 parcial · null sin dato o sin regla
+  if(!campo.regla || v==null || v==='' ) return null;
+  const m = campo.regla.match(/^(>=|<=|>|<|=)\s*(.+)$/); if(!m) return null;
+  const [,op,ref] = m;
+  if(campo.tipo==='frac'){
+    if(!v || v.b===''||v.b==null||v.a===''||v.a==null||Number(v.b)===0) return null;
+    const p = Number(v.a)/Number(v.b)*100, r=Number(ref);
+    if(p>=r) return 1; return p>0 ? 0.5 : 0;
+  }
+  if(campo.tipo==='num'){
+    const n=Number(String(v).replace(',','.')), r=Number(ref); if(isNaN(n)) return null;
+    return ({'>':n>r,'>=':n>=r,'<':n<r,'<=':n<=r,'=':n===r}[op]) ? 1 : 0;
+  }
+  if(op==='=') return String(v)===ref ? 1 : 0;
+  return null;
+}
+function proponerEstado(item, resp){
+  const campos=parsearCampos(item.campos); const notas=campos.map(c=>evaluar(c,(resp.valores||{})[c.id])).filter(x=>x!=null);
+  if(!notas.length) return null;
+  if(notas.every(x=>x===1)) return 'Cumple';
+  if(notas.every(x=>x===0)) return 'No cumple';
+  return 'Parcial';
+}
+function textoDato(item, resp){
+  if(resp.confirmado && resp.datoAnterior) return resp.datoAnterior;
+  const campos=parsearCampos(item.campos), v=resp.valores||{};
+  const partes=campos.map(c=>{
+    const x=v[c.id]; if(x==null||x===''||(Array.isArray(x)&&!x.length)) return null;
+    let t;
+    if(c.tipo==='frac'){ if(x.a===''&&x.b==='') return null; t=x.a+'/'+x.b+(Number(x.b)?' ('+Math.round(x.a/x.b*100)+' %)':''); }
+    else if(c.tipo==='gps'){ t=x.lat.toFixed(7)+', '+x.lng.toFixed(7)+' (±'+Math.round(x.acc)+' m)'; }
+    else if(c.tipo==='fecha'){ t=fechaAr(x); }
+    else if(Array.isArray(x)){ t=x.join(', '); }
+    else t=String(x);
+    return campos.length===1 ? t : c.etiqueta+': '+t;
+  }).filter(Boolean);
+  return partes.join('; ');
+}
+
+/* ---------- Datos y borradores ---------- */
+async function cargarLocal(){
+  S.config = (await db.get('config')) || S.config;
+  S.datos = (await db.get('datos')) || null;
+  S.borradores = (await db.get('borradores')) || {};
+  S.cola = (await db.get('cola')) || [];
+}
+const guardarBorradores = (()=>{ let t; return ()=>{ clearTimeout(t); t=setTimeout(()=>db.set('borradores',S.borradores),400); }; })();
+function borrador(cod){
+  if(!S.borradores[cod]) S.borradores[cod]={edificio:cod, fecha:hoy(), informante:'', respuestas:{}, creado:new Date().toISOString()};
+  return S.borradores[cod];
+}
+function itemsDe(ed){
+  if(!S.datos) return [];
+  return S.datos.items.filter(i => i.aplica!=='Hospital' || ed.tipo==='Hospital');
+}
+const MODOS = {
+  recorrido:{nombre:'Recorrido', desc:'Lo que se observa o se mide en el lugar', fuente:'Visita', filtro:i=>/visita/i.test(i.como)},
+  entrevista:{nombre:'Entrevista', desc:'Preguntas al responsable', fuente:'Entrevista', filtro:i=>/entrevista/i.test(i.como)},
+  documentos:{nombre:'Documentos', desc:'Planos, habilitaciones, protocolos', fuente:'Documento', filtro:i=>/documento/i.test(i.como)},
+  base:{nombre:'De la base', desc:'Datos de otros módulos para confirmar', fuente:'Base', filtro:i=>/base/i.test(i.como)},
+  minimos:{nombre:'Mínimos', desc:'Solo los irrenunciables', fuente:null, filtro:i=>i.minimo==='Sí'},
+  todo:{nombre:'Todo', desc:'Lista completa por bloques', fuente:null, filtro:()=>true}
+};
+function fuentePorDefecto(item, modo){ return MODOS[modo]?.fuente || (FUENTES.find(f=>item.como.toLowerCase().startsWith(f.toLowerCase().slice(0,5))) || 'Visita'); }
+
+/* ---------- Conexión con el script ---------- */
+async function llamar(accion, extra={}){
+  if(!S.config.url || !S.config.clave) throw new Error('Falta configurar el link del script y la clave (Ajustes).');
+  const r = await fetch(S.config.url, {method:'POST', body: JSON.stringify({clave:S.config.clave, accion, ...extra})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || 'Error del script');
+  return j;
+}
+async function descargarDatos(aviso=true){
+  try{
+    const j = await llamar('datos');
+    S.datos = {edificios:j.edificios, items:j.items, ultimos:j.ultimos, actualizado:j.actualizado};
+    await db.set('datos', S.datos);
+    if(aviso) toast('Datos actualizados: '+j.edificios.length+' edificios, '+j.items.length+' ítems');
+    return true;
+  }catch(e){ if(aviso) toast(e.message); return false; }
+}
+let enviando=false;
+async function enviarCola(aviso=false){
+  if(enviando || !S.cola.length || !navigator.onLine) { pintarRed(); return; }
+  enviando=true; pintarRed();
+  try{
+    while(S.cola.length){
+      // lotes chicos para que las fotos no superen el límite del script
+      const lote=[]; let peso=0;
+      for(const r of S.cola){ const p=JSON.stringify(r).length; if(lote.length && (peso+p>8e6 || lote.length>=15)) break; lote.push(r); peso+=p; }
+      const j = await llamar('guardar', {registros:lote});
+      const ok = new Set(j.guardados||[]);
+      S.cola = S.cola.filter(r=>!ok.has(r.id));
+      await db.set('cola', S.cola);
+      if(!ok.size) throw new Error('El script no confirmó el guardado');
+    }
+    if(aviso) toast('Todo enviado a la planilla');
+    await descargarDatos(false);
+  }catch(e){ if(aviso) toast('No se pudo enviar: '+e.message); }
+  enviando=false; pintarRed(); if(S.vista==='inicio') render();
+}
+function pintarRed(){
+  const on=navigator.onLine;
+  $('#punto').classList.toggle('off',!on);
+  $('#txtRed').textContent = on ? 'En línea' : 'Sin conexión · se guarda en el teléfono';
+  $('#txtCola').textContent = S.cola.length ? '· '+S.cola.length+' datos por enviar'+(enviando?' (enviando…)':'') : '';
+}
+window.addEventListener('online', ()=>{ pintarRed(); enviarCola(true); });
+window.addEventListener('offline', pintarRed);
+
+/* ---------- Navegación ---------- */
+function ir(vista, extra={}){ Object.assign(S, extra, {vista}); history.pushState({vista, edificio:S.edificio, modo:S.modo}, ''); render(); window.scrollTo(0,0); }
+window.addEventListener('popstate', e=>{ const st=e.state||{vista:'inicio'}; S.vista=st.vista; S.edificio=st.edificio; S.modo=st.modo; render(); });
+$('#btnVolver').onclick = ()=>history.back();
+$('#btnAjustes').onclick = ()=>ir('ajustes');
+$('#btnAyuda').onclick = ()=>ir('ayuda');
+
+function setBarra(titulo, sub, volver){
+  $('#tituloBarra').innerHTML = esc(titulo)+'<small>'+esc(sub||'')+'</small>';
+  $('#btnVolver').classList.toggle('oculto', !volver);
+}
+function setPie(html){ const p=$('#pie'); if(!html){p.classList.add('oculto');return;} $('#pieIn').innerHTML=html; p.classList.remove('oculto'); }
+const LOGO = '<footer class="logo"><img src="logo-hysl.png" alt="HySL · Hospitales más seguros para las personas" onerror="this.remove()"><p>Servicio de Higiene y Seguridad Laboral · App de relevamiento v'+VERSION+'</p></footer>';
+
+function render(){
+  pintarRed();
+  const v = {inicio:vInicio, edificio:vEdificio, carga:vCarga, cierre:vCierre, ajustes:vAjustes, ayuda:vAyuda}[S.vista] || vInicio;
+  v();
+}
+
+/* ---------- Vista: inicio (lista de edificios) ---------- */
+function vInicio(){
+  setBarra('Relevamiento de edificios','Red Trelew y Rawson · HySL',false); setPie('');
+  const m=$('#vista');
+  if(!S.datos){
+    m.innerHTML = '<div class="aviso">Para empezar, abrí <b>Ajustes</b>, pegá el link del script y la clave, y tocá «Vincular y descargar datos». Se hace una sola vez en cada dispositivo.</div><button class="boton ancho" onclick="ir(\'ajustes\')">Ir a Ajustes</button>'+LOGO;
+    return;
+  }
+  let lista = S.datos.edificios.slice();
+  const f=S.filtro;
+  if(f.red) lista=lista.filter(e=>e.red===f.red);
+  if(f.texto){ const t=f.texto.toLowerCase(); lista=lista.filter(e=>(e.nombre+' '+e.codigo+' '+e.direccion+' '+e.barrio).toLowerCase().includes(t)); }
+  if(f.orden==='cerca' && S.pos) lista.forEach(e=>e._d = (e.lat!=null&&e.lng!=null) ? distancia(S.pos.lat,S.pos.lng,e.lat,e.lng) : 9999);
+  lista.sort((a,b)=> f.orden==='cerca' && S.pos ? a._d-b._d : f.orden==='nombre' ? a.nombre.localeCompare(b.nombre) : (b.faltantes||0)-(a.faltantes||0));
+
+  const enCurso = Object.values(S.borradores).filter(b=>Object.keys(b.respuestas).length);
+  let h='';
+  if(S.cola.length) h+='<div class="aviso"><b>'+S.cola.length+' datos sin enviar.</b> Se envían solos cuando hay señal. <button class="boton sec" style="margin-top:8px" onclick="enviarCola(true)">Enviar ahora</button></div>';
+  if(enCurso.length) h+='<div class="aviso ok">Visitas en curso: '+enCurso.map(b=>{const e=S.datos.edificios.find(x=>x.codigo===b.edificio); return '<b>'+esc(e?e.nombre:b.edificio)+'</b> ('+Object.keys(b.respuestas).length+' datos)';}).join(' · ')+'</div>';
+  h+='<input type="search" id="buscar" placeholder="Buscar por nombre, código, dirección o barrio" value="'+esc(f.texto)+'">';
+  h+='<div class="tabs" style="margin-top:8px">'+
+     [['','Ambas redes'],['Trelew','Trelew'],['Rawson','Rawson']].map(([v,t])=>'<button data-red="'+v+'" class="'+(f.red===v?'on':'')+'">'+t+'</button>').join('')+
+     '<span style="width:10px"></span>'+
+     [['faltantes','Más datos faltantes'],['cerca','Cerca mío'],['nombre','Nombre']].map(([v,t])=>'<button data-orden="'+v+'" class="'+(f.orden===v?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  h+='<p class="suave">'+lista.length+' edificios · datos del '+new Date(S.datos.actualizado).toLocaleString('es-AR')+'</p>';
+  h+=lista.map(e=>{
+    const b=S.borradores[e.codigo], n=b?Object.keys(b.respuestas).length:0, c=e.completo!=null?(e.completo>1?e.completo/100:e.completo):0;
+    return '<div class="tarjeta edif" data-cod="'+esc(e.codigo)+'"><div class="fila"><div class="crece"><div class="nombre">'+esc(e.nombre)+'</div>'+
+      '<div class="suave">'+esc(e.codigo)+' · '+esc(e.tipo)+' · '+esc(e.red)+(e._d!=null&&f.orden==='cerca'&&e._d<9999?' · a '+e._d.toFixed(1)+' km':'')+'</div></div>'+
+      (n?'<span class="chip">En curso: '+n+'</span>':'')+'</div>'+
+      '<div class="fila" style="margin-top:8px"><div class="avance crece"><i style="width:'+Math.round(c*100)+'%"></i></div><span class="suave">'+pct(e.completo)+' completo</span></div></div>';
+  }).join('');
+  m.innerHTML = h+LOGO;
+  $('#buscar').oninput = ev=>{ S.filtro.texto=ev.target.value; clearTimeout(window._tb); window._tb=setTimeout(()=>{ const p=ev.target.selectionStart; render(); const i=$('#buscar'); i.focus(); i.setSelectionRange(p,p); },250); };
+  m.querySelectorAll('[data-red]').forEach(b=>b.onclick=()=>{S.filtro.red=b.dataset.red;render();});
+  m.querySelectorAll('[data-orden]').forEach(b=>b.onclick=()=>{
+    S.filtro.orden=b.dataset.orden;
+    if(b.dataset.orden==='cerca' && !S.pos){ toast('Buscando tu ubicación…'); navigator.geolocation.getCurrentPosition(p=>{S.pos={lat:p.coords.latitude,lng:p.coords.longitude};render();},()=>toast('No se pudo obtener la ubicación'),{enableHighAccuracy:true,timeout:15000}); }
+    render();
+  });
+  m.querySelectorAll('.edif').forEach(d=>d.onclick=()=>ir('edificio',{edificio:d.dataset.cod}));
+}
+
+/* ---------- Vista: ficha del edificio ---------- */
+function vEdificio(){
+  const e=S.datos.edificios.find(x=>x.codigo===S.edificio); if(!e) return ir('inicio');
+  setBarra(e.nombre, e.codigo+' · '+e.tipo, true);
+  const b=borrador(e.codigo), its=itemsDe(e);
+  const resp=b.respuestas;
+  const mapa = (e.lat!=null&&e.lng!=null) ? '<a href="https://www.google.com/maps?q='+e.lat+','+e.lng+'" target="_blank" rel="noopener">'+String(e.lat).replace('.',',')+' / '+String(e.lng).replace('.',',')+'</a>' : 's/d';
+  let h='<div class="tarjeta"><div class="suave">'+esc(e.oficial)+'</div>'+
+    '<p style="margin:8px 0 0"><b>Dirección:</b> '+esc(e.direccion||'s/d')+(e.barrio&&e.barrio!=='s/d'?' · '+esc(e.barrio):'')+' · '+esc(e.localidad)+'</p>'+
+    '<p style="margin:4px 0 0"><b>Coordenadas:</b> '+mapa+' <span class="suave">('+esc(e.fuenteCoord||'s/d')+')</span></p>'+
+    '<p style="margin:4px 0 0"><b>Teléfono:</b> '+esc(e.telefono||'s/d')+' · <b>Depende de:</b> '+esc(e.depende)+'</p>'+
+    '<div class="fila" style="margin-top:10px"><div class="avance crece"><i style="width:'+Math.round((e.completo>1?e.completo/100:e.completo||0)*100)+'%"></i></div><span class="suave">Base '+pct(e.completo)+' · faltan '+(e.faltantes??'s/d')+' datos</span></div></div>';
+  h+='<div class="tarjeta"><label class="et" style="margin-top:0">Fecha de la visita</label><input type="date" id="fFecha" value="'+esc(b.fecha)+'">'+
+     '<label class="et">Entrevistado / informante (nombre y cargo)</label><input type="text" id="fInf" value="'+esc(b.informante)+'" placeholder="Ej.: Lic. … · responsable del CAPS"></div>';
+  h+='<h3>¿Qué vas a cargar?</h3><div class="modos">'+Object.entries(MODOS).map(([k,mo])=>{
+    const lista=its.filter(mo.filtro), hechos=lista.filter(i=>resp[i.codigo]?.estado).length;
+    return '<button class="modo" data-modo="'+k+'"><b>'+mo.nombre+'</b><span>'+mo.desc+'</span><span class="cuenta">'+hechos+' / '+lista.length+'</span></button>';
+  }).join('')+'</div>';
+  const n=Object.values(resp).filter(r=>r.estado).length;
+  h+='<p class="suave" style="margin-top:14px">Lo que cargás se guarda en el teléfono a medida que avanzás. Recién al cerrar la visita se envía a la planilla.</p>';
+  if(Object.keys(resp).length) h+='<button class="boton linea ancho" id="btnDescartar" style="margin-top:8px">Descartar esta visita en curso</button>';
+  $('#vista').innerHTML=h+LOGO;
+  setPie('<div class="crece suave">'+n+' datos cargados</div><button class="boton" id="btnCerrar" '+(n?'':'disabled')+'>Cerrar visita</button>');
+  $('#fFecha').onchange=ev=>{b.fecha=ev.target.value;guardarBorradores();};
+  $('#fInf').oninput=ev=>{b.informante=ev.target.value;guardarBorradores();};
+  document.querySelectorAll('[data-modo]').forEach(x=>x.onclick=()=>ir('carga',{modo:x.dataset.modo}));
+  $('#btnCerrar').onclick=()=>ir('cierre');
+  const d=$('#btnDescartar'); if(d) d.onclick=()=>{ if(confirm('¿Descartar lo cargado en esta visita? No se puede deshacer.')){ delete S.borradores[e.codigo]; db.set('borradores',S.borradores); render(); } };
+}
+
+/* ---------- Vista: carga de ítems ---------- */
+function vCarga(){
+  const e=S.datos.edificios.find(x=>x.codigo===S.edificio); if(!e) return ir('inicio');
+  const mo=MODOS[S.modo]||MODOS.todo, b=borrador(e.codigo);
+  setBarra(mo.nombre+' · '+e.nombre, mo.desc, true);
+  let its=itemsDe(e).filter(mo.filtro);
+  if(S.modo==='recorrido') its.sort((a,c)=>(zonaN(a)-zonaN(c))||a.codigo.localeCompare(c.codigo));
+  else its.sort((a,c)=>a.codigo.localeCompare(c.codigo));
+  const grupo = i => S.modo==='recorrido' ? (i.zona && i.zona!=='—' ? i.zona : '8 · Otros (visita)') : i.bloque;
+  let h='<div class="fila" style="margin-bottom:6px"><label class="suave"><input type="checkbox" id="soloPend" '+(S.soloPend?'checked':'')+'> Mostrar solo pendientes</label></div>';
+  let g='';
+  its.forEach(i=>{
+    const gi=grupo(i); if(gi!==g){ g=gi; h+='<h3 class="gr" data-g="'+esc(gi)+'">'+esc(gi.replace(/^\d+ · /,''))+'</h3>'; }
+    h+=tarjetaItem(e,i,b);
+  });
+  if(!its.length) h+='<p>No hay ítems para este modo en este edificio.</p>';
+  $('#vista').innerHTML=h+LOGO;
+  its.forEach(i=>conectarItem(e,i,b,mo));
+  $('#soloPend').onchange=ev=>{S.soloPend=ev.target.checked; aplicarFiltroPend();};
+  aplicarFiltroPend();
+  actualizarPieCarga(its,b);
+}
+function zonaN(i){ const n=parseInt(i.zona); return isNaN(n)?8:n; }
+function aplicarFiltroPend(){
+  document.querySelectorAll('.item').forEach(c=>c.classList.toggle('oculto', S.soloPend && c.dataset.hecho==='1'));
+}
+function actualizarPieCarga(its,b){
+  const hechos=its.filter(i=>b.respuestas[i.codigo]?.estado).length, p=its.length?Math.round(hechos/its.length*100):0;
+  setPie('<div class="crece"><div class="suave">'+hechos+' de '+its.length+' ítems</div><div class="avance"><i style="width:'+p+'%"></i></div></div><button class="boton sec" onclick="history.back()">Listo</button>');
+}
+function tarjetaItem(e,i,b){
+  const r=b.respuestas[i.codigo]||{}, ult=S.datos.ultimos[e.codigo+'|'+i.codigo];
+  const campos=parsearCampos(i.campos);
+  let h='<div class="tarjeta item '+claseEstado(r.estado)+'" id="it-'+i.codigo+'" data-hecho="'+(r.estado?'1':'0')+'">';
+  h+='<div class="fila"><span class="cod">'+esc(i.codigo)+'</span>'+(i.minimo==='Sí'?'<span class="chip rojo">Mínimo</span>':'')+'<span class="chip">'+esc(i.capa)+'</span></div>';
+  h+='<div class="titulo">'+esc(i.item)+'</div><div class="suave">'+esc(i.donde)+'</div>';
+  if(ult && ult.dato){
+    h+='<div class="anterior"><div class="suave">Último dato · '+esc(ult.fecha)+' · '+esc(ult.fuente)+' · '+esc(ult.estado)+'</div><div>'+esc(ult.dato)+'</div>'+
+      '<button class="boton sec ancho" style="margin-top:8px" data-acc="confirmar">'+(r.confirmado?'✓ Confirmado (tocá para deshacer)':'Lo revisé: confirmo este dato')+'</button></div>';
+  }
+  h+='<div class="campos'+(r.confirmado?' oculto':'')+'">'+campos.map(c=>campoHtml(c,(r.valores||{})[c.id])).join('')+'</div>';
+  h+='<label class="et">Estado</label><div class="estados">'+['Cumple','Parcial','No cumple','No aplica','s/d','A verificar'].map(s=>'<button class="est'+(r.estado===s?' on':'')+'" data-v="'+s+'">'+s+'</button>').join('')+'</div>';
+  h+='<label class="et">Fuente</label><div class="multi fuente">'+FUENTES.map(f=>'<button data-f="'+f+'" class="'+((r.fuente||'')===f?'on':'')+'">'+f+'</button>').join('')+'</div>';
+  h+='<details'+((r.obs||(r.fotos||[]).length)?' open':'')+'><summary>Observaciones y fotos ('+((r.fotos||[]).length)+'/'+MAX_FOTOS+')</summary>'+
+     '<textarea data-acc="obs" placeholder="Observaciones">'+esc(r.obs||'')+'</textarea>'+
+     '<div class="fila" style="margin-top:6px"><label class="boton sec crece" style="text-align:center">Sacar foto<input type="file" accept="image/*" capture="environment" data-acc="foto" hidden></label>'+
+     '<label class="boton linea crece" style="text-align:center">Galería o PDF<input type="file" accept="image/*,application/pdf" multiple data-acc="foto" hidden></label></div>'+
+     '<div class="fotos">'+fotosHtml(r.fotos)+'</div></details>';
+  h+='<details><summary>Criterio y normativa</summary><p><b>Dato a registrar:</b> '+esc(i.dato)+'</p><p><b>Criterio:</b> '+esc(i.criterio)+'</p><p><b>Normativa:</b> '+esc(i.norma)+'</p><p class="suave">Cómo se obtiene: '+esc(i.como)+'</p></details>';
+  return h+'</div>';
+}
+function fotosHtml(f){ return (f||[]).map((x,k)=>'<div class="mini" style="'+(x.tipo.startsWith('image')?'background-image:url('+x.datos+')':'')+'">'+(x.tipo.includes('pdf')?'PDF':'')+'<button data-quitar="'+k+'" aria-label="Quitar">×</button></div>').join(''); }
+function reglaTexto(c){ if(!c.regla) return ''; const m=c.regla.match(/^(>=|<=|>|<|=)\s*(.+)$/); if(!m) return ''; const t={'>':'más de','>=':'al menos','<':'menos de','<=':'como máximo','=':c.tipo==='frac'?'':'debe ser'}[m[1]]; return c.tipo==='frac' ? 'Cumple con el '+m[2]+' %' : 'Cumple si '+t+' '+m[2]; }
+function campoHtml(c,v){
+  let h='<div class="campo" data-c="'+c.id+'"><label class="et">'+esc(c.etiqueta)+' <span class="regla">'+esc(reglaTexto(c))+'</span></label>';
+  if(c.tipo==='sn') h+='<div class="sn">'+['Sí','No','s/d'].map(o=>'<button data-o="'+o+'" class="'+(v===o?'on':'')+'">'+o+'</button>').join('')+'</div>';
+  else if(c.tipo==='lista') h+='<div class="multi uno">'+c.opciones.map(o=>'<button data-o="'+esc(o)+'" class="'+(v===o?'on':'')+'">'+esc(o)+'</button>').join('')+'</div>';
+  else if(c.tipo==='multi') h+='<div class="multi varios">'+c.opciones.map(o=>'<button data-o="'+esc(o)+'" class="'+((v||[]).includes(o)?'on':'')+'">'+esc(o)+'</button>').join('')+'</div>';
+  else if(c.tipo==='num') h+='<input type="number" inputmode="decimal" step="any" value="'+esc(v??'')+'">';
+  else if(c.tipo==='fecha') h+='<input type="date" value="'+esc(v||'')+'">';
+  else if(c.tipo==='frac') h+='<div class="frac"><input type="number" inputmode="numeric" data-p="a" placeholder="Bien" value="'+esc(v?.a??'')+'"><span>de</span><input type="number" inputmode="numeric" data-p="b" placeholder="Total" value="'+esc(v?.b??'')+'"></div>';
+  else if(c.tipo==='gps') h+='<button class="boton sec ancho" data-gps="1">'+(v?'📍 '+v.lat.toFixed(7)+', '+v.lng.toFixed(7)+' (±'+Math.round(v.acc)+' m) · tomar de nuevo':'📍 Tomar coordenadas acá')+'</button>';
+  else h+='<textarea>'+esc(v||'')+'</textarea>';
+  return h+'</div>';
+}
+function conectarItem(e,i,b,mo){
+  const card=$('#it-'+i.codigo); if(!card) return;
+  const campos=parsearCampos(i.campos);
+  const r=()=> (b.respuestas[i.codigo] ||= {valores:{}, fuente:fuentePorDefecto(i,S.modo)});
+  const cambio=()=>{
+    const x=r(); x.valores ||= {};
+    const p=proponerEstado(i,x);
+    if(p && !x.estadoManual){ x.estado=p; }
+    card.querySelectorAll('.est').forEach(bt=>bt.classList.toggle('prop', p===bt.dataset.v && x.estado!==p));
+    pintarItem(card,x);
+    guardarBorradores();
+  };
+  const pintarItem=(card,x)=>{
+    card.className='tarjeta item '+claseEstado(x.estado); card.dataset.hecho = x.estado?'1':'0';
+    card.querySelectorAll('.est').forEach(bt=>bt.classList.toggle('on', bt.dataset.v===x.estado));
+    card.querySelectorAll('.fuente button').forEach(bt=>bt.classList.toggle('on', bt.dataset.f===x.fuente));
+    campos.forEach(c=>{ const el=card.querySelector('[data-c="'+c.id+'"] .regla'); if(!el) return; const n=evaluar(c,x.valores[c.id]); el.className='regla'+(n===1?' bien':n===0?' mal':''); });
+    const its=itemsDe(e).filter(mo.filtro); actualizarPieCarga(its,b);
+  };
+  campos.forEach(c=>{
+    const cont=card.querySelector('[data-c="'+c.id+'"]'); if(!cont) return;
+    if(c.tipo==='sn'||c.tipo==='lista'){
+      cont.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{ const x=r(); x.valores[c.id] = x.valores[c.id]===bt.dataset.o ? '' : bt.dataset.o; cont.querySelectorAll('button').forEach(o=>o.classList.toggle('on',o.dataset.o===x.valores[c.id])); cambio(); });
+    } else if(c.tipo==='multi'){
+      cont.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{ const x=r(); const a=new Set(x.valores[c.id]||[]); a.has(bt.dataset.o)?a.delete(bt.dataset.o):a.add(bt.dataset.o); x.valores[c.id]=[...a]; bt.classList.toggle('on'); cambio(); });
+    } else if(c.tipo==='frac'){
+      cont.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{ const x=r(); const v=x.valores[c.id]||{a:'',b:''}; v[inp.dataset.p]=inp.value; x.valores[c.id]=v; cambio(); });
+    } else if(c.tipo==='gps'){
+      const bt=cont.querySelector('button');
+      bt.onclick=()=>{ bt.textContent='Buscando señal GPS…'; navigator.geolocation.getCurrentPosition(p=>{ const x=r(); x.valores[c.id]={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}; bt.textContent='📍 '+p.coords.latitude.toFixed(7)+', '+p.coords.longitude.toFixed(7)+' (±'+Math.round(p.coords.accuracy)+' m) · tomar de nuevo'; if(p.coords.accuracy>30) toast('Precisión baja (±'+Math.round(p.coords.accuracy)+' m): conviene esperar y tomarla de nuevo al aire libre'); cambio(); }, err=>{ bt.textContent='📍 Tomar coordenadas acá'; toast('No se pudo obtener la ubicación: '+err.message); }, {enableHighAccuracy:true,timeout:30000,maximumAge:0}); };
+    } else {
+      const inp=cont.querySelector('input,textarea'); inp.oninput=()=>{ const x=r(); x.valores[c.id]=inp.value; cambio(); };
+    }
+  });
+  card.querySelectorAll('.est').forEach(bt=>bt.onclick=()=>{ const x=r(); x.estado = x.estado===bt.dataset.v ? '' : bt.dataset.v; x.estadoManual = !!x.estado; if(!x.fuente) x.fuente=fuentePorDefecto(i,S.modo); pintarItem(card,x); guardarBorradores(); if(S.soloPend) setTimeout(aplicarFiltroPend,600); });
+  card.querySelectorAll('.fuente button').forEach(bt=>bt.onclick=()=>{ const x=r(); x.fuente=bt.dataset.f; pintarItem(card,x); guardarBorradores(); });
+  const conf=card.querySelector('[data-acc="confirmar"]');
+  if(conf) conf.onclick=()=>{
+    const x=r(), ult=S.datos.ultimos[e.codigo+'|'+i.codigo];
+    x.confirmado=!x.confirmado; x.datoAnterior= x.confirmado ? ult.dato : '';
+    conf.textContent = x.confirmado ? '✓ Confirmado (tocá para deshacer)' : 'Lo revisé: confirmo este dato';
+    card.querySelector('.campos').classList.toggle('oculto', x.confirmado);
+    if(x.confirmado && !x.estado) toast('Elegí el estado de este ítem');
+    pintarItem(card,x); guardarBorradores();
+  };
+  card.querySelector('[data-acc="obs"]').oninput=ev=>{ r().obs=ev.target.value; guardarBorradores(); };
+  card.querySelectorAll('[data-acc="foto"]').forEach(inp=>inp.onchange=async()=>{
+    const x=r(); x.fotos ||= [];
+    for(const f of inp.files){
+      if(x.fotos.length>=MAX_FOTOS){ toast('Máximo '+MAX_FOTOS+' fotos por ítem'); break; }
+      try{ x.fotos.push(await leerArchivo(f)); }catch(err){ toast(err.message); }
+    }
+    inp.value=''; refrescarFotos(card,x); guardarBorradores();
+  });
+  refrescarFotos(card, b.respuestas[i.codigo]||{});
+}
+function refrescarFotos(card,x){
+  const cont=card.querySelector('.fotos'); cont.innerHTML=fotosHtml(x.fotos);
+  card.querySelector('summary').textContent='Observaciones y fotos ('+((x.fotos||[]).length)+'/'+MAX_FOTOS+')';
+  cont.querySelectorAll('[data-quitar]').forEach(bt=>bt.onclick=()=>{ x.fotos.splice(Number(bt.dataset.quitar),1); refrescarFotos(card,x); guardarBorradores(); });
+}
+function leerArchivo(f){
+  return new Promise((ok,mal)=>{
+    const fr=new FileReader();
+    if(f.type==='application/pdf'){
+      if(f.size>8e6) return mal(new Error('El PDF supera 8 MB'));
+      fr.onload=()=>ok({tipo:'application/pdf',datos:fr.result}); fr.onerror=()=>mal(fr.error); fr.readAsDataURL(f); return;
+    }
+    fr.onload=()=>{ const img=new Image(); img.onload=()=>{ const max=1600, k=Math.min(1,max/Math.max(img.width,img.height)); const cv=document.createElement('canvas'); cv.width=Math.round(img.width*k); cv.height=Math.round(img.height*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); ok({tipo:'image/jpeg',datos:cv.toDataURL('image/jpeg',0.72)}); }; img.onerror=()=>mal(new Error('No se pudo leer la imagen')); img.src=fr.result; };
+    fr.onerror=()=>mal(fr.error); fr.readAsDataURL(f);
+  });
+}
+
+/* ---------- Vista: cierre de la visita ---------- */
+function vCierre(){
+  const e=S.datos.edificios.find(x=>x.codigo===S.edificio); if(!e) return ir('inicio');
+  const b=borrador(e.codigo), its=itemsDe(e);
+  setBarra('Cerrar visita', e.nombre, true);
+  const hechos=its.filter(i=>b.respuestas[i.codigo]?.estado), sinEstado=its.filter(i=>b.respuestas[i.codigo] && !b.respuestas[i.codigo].estado);
+  const faltan=its.filter(i=>!b.respuestas[i.codigo]?.estado), minFaltan=faltan.filter(i=>i.minimo==='Sí');
+  const cuenta=s=>hechos.filter(i=>b.respuestas[i.codigo].estado===s).length;
+  let h='<div class="tarjeta"><b>'+esc(e.nombre)+'</b> · visita del '+fechaAr(b.fecha)+(b.informante?' · informante: '+esc(b.informante):'')+
+    '<p>'+hechos.length+' datos para guardar: <span class="chip">Cumple '+cuenta('Cumple')+'</span><span class="chip">Parcial '+cuenta('Parcial')+'</span><span class="chip rojo">No cumple '+cuenta('No cumple')+'</span><span class="chip">Otros '+(hechos.length-cuenta('Cumple')-cuenta('Parcial')-cuenta('No cumple'))+'</span></p></div>';
+  if(!b.fecha) h+='<div class="aviso">Falta la fecha de la visita (en la ficha del edificio).</div>';
+  if(sinEstado.length) h+='<div class="aviso">Hay '+sinEstado.length+' ítems con datos pero sin estado: no se guardan hasta que elijas el estado ('+sinEstado.map(i=>i.codigo).join(', ')+').</div>';
+  if(minFaltan.length) h+='<div class="tarjeta" style="border-color:#d64550"><b style="color:var(--rojo)">Mínimos irrenunciables sin relevar ('+minFaltan.length+')</b><ul>'+minFaltan.map(i=>'<li>'+esc(i.codigo)+' · '+esc(i.item)+'</li>').join('')+'</ul></div>';
+  if(faltan.length-minFaltan.length>0) h+='<details class="tarjeta"><summary>Otros ítems sin relevar ('+(faltan.length-minFaltan.length)+')</summary><ul>'+faltan.filter(i=>i.minimo!=='Sí').map(i=>'<li>'+esc(i.codigo)+' · '+esc(i.item)+'</li>').join('')+'</ul></details>';
+  h+='<p class="suave">Al guardar, cada dato pasa a la hoja VISITAS como una fila nueva (no se borra nada de lo anterior) y las fotos a la carpeta del edificio. Lo que no relevaste queda para otra visita.</p>';
+  $('#vista').innerHTML=h+LOGO;
+  setPie('<button class="boton linea" onclick="history.back()">Seguir cargando</button><button class="boton crece" id="btnGuardar" '+(hechos.length&&b.fecha?'':'disabled')+'>Guardar '+hechos.length+' datos</button>');
+  $('#btnGuardar').onclick=async()=>{
+    const regs=hechos.map(i=>{
+      const x=b.respuestas[i.codigo], g=parsearCampos(i.campos).find(c=>c.tipo==='gps'), gv=g?x.valores?.[g.id]:null;
+      return {id:nuevoId(e.codigo,i.codigo), fecha:b.fecha, edificio:e.codigo, item:i.codigo,
+        dato:textoDato(i,x)||'s/d', estado:x.estado, fuente:x.fuente||fuentePorDefecto(i,S.modo), informante:b.informante,
+        observaciones:x.obs||'', fotos:x.fotos||[], brechaSSB: (i.capa==='Accesibilidad' && (x.estado==='Parcial'||x.estado==='No cumple')) ? 'Sí' : '',
+        lat: (!x.confirmado&&gv)?gv.lat:null, lng:(!x.confirmado&&gv)?gv.lng:null};
+    });
+    S.cola.push(...regs); await db.set('cola',S.cola);
+    regs.forEach(r=>{ S.datos.ultimos[r.edificio+'|'+r.item]={fecha:fechaAr(r.fecha),dato:r.dato,estado:r.estado,fuente:r.fuente,informante:r.informante}; });
+    await db.set('datos',S.datos);
+    // lo que quedó sin estado sigue en curso
+    const resto={}; Object.entries(b.respuestas).forEach(([k,v])=>{ if(!v.estado) resto[k]=v; });
+    if(Object.keys(resto).length) b.respuestas=resto; else delete S.borradores[e.codigo];
+    await db.set('borradores',S.borradores);
+    toast(navigator.onLine ? 'Guardado. Enviando a la planilla…' : 'Guardado en el teléfono. Se envía cuando haya señal.');
+    history.go(-2);
+    setTimeout(()=>enviarCola(true),300);
+  };
+}
+
+/* ---------- Vista: ajustes ---------- */
+function vAjustes(){
+  setBarra('Ajustes','Vincular este dispositivo',true); setPie('');
+  let h='<div class="tarjeta"><p>Se hace <b>una sola vez</b> en cada dispositivo (tu celular y tu PC). Después la app no pide nada.</p>'+
+    '<label class="et">Link del script (termina en /exec)</label><input type="url" id="aUrl" value="'+esc(S.config.url)+'" placeholder="https://script.google.com/macros/s/…/exec">'+
+    '<label class="et">Clave</label><input type="password" id="aClave" value="'+esc(S.config.clave)+'" autocomplete="off" placeholder="Pegá la clave del menú Relevamiento">'+
+    '<button class="boton ancho" id="aGuardar" style="margin-top:12px">Vincular y descargar datos</button></div>';
+  h+='<div class="tarjeta"><b>Datos en este dispositivo</b><p class="suave">'+(S.datos?'Descargados el '+new Date(S.datos.actualizado).toLocaleString('es-AR')+' · '+S.datos.edificios.length+' edificios · '+S.datos.items.length+' ítems':'Sin datos descargados')+'<br>'+S.cola.length+' datos por enviar · '+Object.keys(S.borradores).length+' visitas en curso</p>'+
+    '<button class="boton sec ancho" id="aActualizar">Actualizar edificios e ítems</button>'+
+    '<p class="suave" style="margin-top:12px">Si cambiaste ITEMS o EDIFICIOS en la planilla, tocá «Actualizar» con señal para que la app lo tome.</p>'+
+    '<button class="boton linea ancho" id="aBorrar" style="margin-top:6px">Desvincular este dispositivo</button></div>';
+  $('#vista').innerHTML=h+LOGO;
+  $('#aGuardar').onclick=async()=>{ S.config={url:$('#aUrl').value.trim(), clave:$('#aClave').value.trim()}; await db.set('config',S.config); toast('Probando la conexión…'); if(await descargarDatos(true)){ enviarCola(); history.back(); } };
+  $('#aActualizar').onclick=()=>descargarDatos(true).then(()=>render());
+  $('#aBorrar').onclick=async()=>{
+    if(S.cola.length && !confirm('Hay '+S.cola.length+' datos sin enviar que se van a perder. ¿Desvincular igual?')) return;
+    if(!confirm('¿Desvincular este dispositivo? Se borran el link, la clave y los datos guardados en él.')) return;
+    for(const k of ['config','datos','borradores','cola']) await db.del(k);
+    S.config={url:'',clave:''}; S.datos=null; S.borradores={}; S.cola=[]; ir('inicio');
+  };
+}
+
+/* ---------- Vista: ayuda ---------- */
+function vAyuda(){
+  setBarra('Ayuda','Cómo usar la app',true); setPie('');
+  const p=(t,x)=>'<div class="tarjeta"><b>'+t+'</b><p style="margin:6px 0 0">'+x+'</p></div>';
+  $('#vista').innerHTML =
+    p('1. Elegí el edificio','En la lista los edificios se ordenan por los datos que les faltan. «Cerca mío» los ordena por distancia usando el GPS.')+
+    p('2. Fecha e informante','En la ficha del edificio cargá la fecha de la visita y el nombre y cargo de quien te informa. Se usan para todos los datos de esa visita.')+
+    p('3. Elegí qué vas a cargar','<b>Recorrido</b>: lo que se observa o mide, en el orden en que recorrés el edificio. <b>Entrevista</b>: las preguntas al responsable. <b>Documentos</b> y <b>De la base</b>: lo que sale de papeles o de otros módulos. <b>Mínimos</b>: solo los irrenunciables. <b>Todo</b>: la lista completa.')+
+    p('4. Cargá cada ítem','Si hay un dato anterior (por ejemplo, lo que respondió el CAPS en 2025), revisalo y, si sigue igual, tocá «Lo revisé: confirmo este dato». Si cambió, completá los campos. Cuando cargás una medida, la app propone el estado según el criterio (por ejemplo, puerta del baño accesible de más de 80 cm); vos decidís. Cada ítem necesita un estado para guardarse.')+
+    p('5. Fotos','Hasta 5 por ítem: «Sacar foto» abre la cámara; «Galería o PDF» toma archivos del teléfono o la PC. Las fotos se achican para que no pesen.')+
+    p('6. Sin señal','Todo se guarda en el dispositivo mientras cargás. Al cerrar la visita, los datos quedan en «por enviar» y se mandan solos cuando vuelve la conexión. No cierres la sesión del navegador ni borres sus datos hasta que diga que no hay datos por enviar.')+
+    p('7. Cerrar la visita','Muestra lo cargado y lo que falta, con los mínimos irrenunciables en rojo. Al guardar, cada dato pasa a VISITAS como una fila nueva y las fotos a la carpeta del edificio. Las coordenadas tomadas con GPS (A03) también actualizan EDIFICIOS.')+
+    p('8. Cambiar lo que se pregunta','Se cambia en la planilla, hoja ITEMS: la columna «Campos de carga (app)» define los campos (texto, número, Sí/No, lista, fecha, GPS) y la regla para proponer el estado; «Zona de recorrido», el orden del recorrido. Después, en la app: Ajustes › Actualizar.')+
+    p('Administración','La clave se genera y se consulta en la planilla, menú Relevamiento. Si la cambiás, hay que cargarla de nuevo en cada dispositivo.')+LOGO;
+}
+
+/* ---------- Arranque ---------- */
+(async()=>{
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  await cargarLocal();
+  history.replaceState({vista:'inicio'},'');
+  render();
+  if(navigator.onLine && S.config.url){ await enviarCola(); if(!S.cola.length) await descargarDatos(false); if(S.vista==='inicio') render(); }
+})();
+</script>
+</body>
+</html>
