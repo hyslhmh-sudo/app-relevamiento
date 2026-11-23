@@ -112,6 +112,7 @@
   <div class="barra">
     <button class="icono oculto" id="btnVolver" aria-label="Volver">←</button>
     <h1 id="tituloBarra">Relevamiento de edificios<small>Red Trelew y Rawson · HySL</small></h1>
+    <button class="icono oculto" id="btnInstalar" aria-label="Instalar la app" title="Instalar la app">⤓</button>
     <button class="icono" id="btnAyuda" aria-label="Ayuda">?</button>
     <button class="icono" id="btnAjustes" aria-label="Ajustes">⚙</button>
   </div>
@@ -282,12 +283,29 @@ function pintarRed(){
 window.addEventListener('online', ()=>{ pintarRed(); enviarCola(true); });
 window.addEventListener('offline', pintarRed);
 
+/* ---------- Instalar como app ---------- */
+let pedidoInstalar=null;
+const yaInstalada = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); pedidoInstalar=e; if(S.vista==='inicio'||S.vista==='ajustes') render(); });
+window.addEventListener('appinstalled', ()=>{ pedidoInstalar=null; toast('App instalada. Ya la tenés en la pantalla principal.'); render(); });
+async function instalar(){
+  if(pedidoInstalar){ pedidoInstalar.prompt(); await pedidoInstalar.userChoice; pedidoInstalar=null; render(); return; }
+  if(esIOS()) alert('En iPhone: tocá el botón Compartir (el cuadrado con la flecha) y elegí «Agregar a inicio».');
+  else alert('Abrí el menú ⋮ de Chrome y tocá «Instalar app» o «Agregar a la pantalla principal».');
+}
+function bloqueInstalar(){
+  if(yaInstalada()) return '';
+  return '<div class="aviso ok fila"><div class="crece"><b>Instalá la app en este dispositivo</b><br><span style="font-size:13px">Queda con su ícono en la pantalla principal y abre sin señal.</span></div><button class="boton" onclick="instalar()">Instalar</button></div>';
+}
+
 /* ---------- Navegación ---------- */
 function ir(vista, extra={}){ Object.assign(S, extra, {vista}); history.pushState({vista, edificio:S.edificio, modo:S.modo}, ''); render(); window.scrollTo(0,0); }
 window.addEventListener('popstate', e=>{ const st=e.state||{vista:'inicio'}; S.vista=st.vista; S.edificio=st.edificio; S.modo=st.modo; render(); });
 $('#btnVolver').onclick = ()=>history.back();
 $('#btnAjustes').onclick = ()=>ir('ajustes');
 $('#btnAyuda').onclick = ()=>ir('ayuda');
+$('#btnInstalar').onclick = ()=>instalar();
 
 function setBarra(titulo, sub, volver){
   $('#tituloBarra').innerHTML = esc(titulo)+'<small>'+esc(sub||'')+'</small>';
@@ -298,6 +316,7 @@ const LOGO = '<footer class="logo"><img src="logo-hysl.png" alt="HySL · Hospita
 
 function render(){
   pintarRed();
+  $('#btnInstalar').classList.toggle('oculto', yaInstalada());
   const v = {inicio:vInicio, edificio:vEdificio, carga:vCarga, cierre:vCierre, ajustes:vAjustes, ayuda:vAyuda}[S.vista] || vInicio;
   v();
 }
@@ -307,7 +326,7 @@ function vInicio(){
   setBarra('Relevamiento de edificios','Red Trelew y Rawson · HySL',false); setPie('');
   const m=$('#vista');
   if(!S.datos){
-    m.innerHTML = '<div class="aviso">Para empezar, abrí <b>Ajustes</b>, pegá el link del script y la clave, y tocá «Vincular y descargar datos». Se hace una sola vez en cada dispositivo.</div><button class="boton ancho" onclick="ir(\'ajustes\')">Ir a Ajustes</button>'+LOGO;
+    m.innerHTML = bloqueInstalar()+'<div class="aviso">Para empezar, abrí <b>Ajustes</b>, pegá el link del script y la clave, y tocá «Vincular y descargar datos». Se hace una sola vez en cada dispositivo.</div><button class="boton ancho" onclick="ir(\'ajustes\')">Ir a Ajustes</button>'+LOGO;
     return;
   }
   let lista = S.datos.edificios.slice();
@@ -318,7 +337,7 @@ function vInicio(){
   lista.sort((a,b)=> f.orden==='cerca' && S.pos ? a._d-b._d : f.orden==='nombre' ? a.nombre.localeCompare(b.nombre) : (b.faltantes||0)-(a.faltantes||0));
 
   const enCurso = Object.values(S.borradores).filter(b=>Object.keys(b.respuestas).length);
-  let h='';
+  let h=bloqueInstalar();
   if(S.cola.length) h+='<div class="aviso"><b>'+S.cola.length+' datos sin enviar.</b> Se envían solos cuando hay señal. <button class="boton sec" style="margin-top:8px" onclick="enviarCola(true)">Enviar ahora</button></div>';
   if(enCurso.length) h+='<div class="aviso ok">Visitas en curso: '+enCurso.map(b=>{const e=S.datos.edificios.find(x=>x.codigo===b.edificio); return '<b>'+esc(e?e.nombre:b.edificio)+'</b> ('+Object.keys(b.respuestas).length+' datos)';}).join(' · ')+'</div>';
   h+='<input type="search" id="buscar" placeholder="Buscar por nombre, código, dirección o barrio" value="'+esc(f.texto)+'">';
@@ -554,7 +573,7 @@ function vCierre(){
 /* ---------- Vista: ajustes ---------- */
 function vAjustes(){
   setBarra('Ajustes','Vincular este dispositivo',true); setPie('');
-  let h='<div class="tarjeta"><p>Se hace <b>una sola vez</b> en cada dispositivo (tu celular y tu PC). Después la app no pide nada.</p>'+
+  let h=bloqueInstalar()+'<div class="tarjeta"><p>Se hace <b>una sola vez</b> en cada dispositivo (tu celular y tu PC). Después la app no pide nada.</p>'+
     '<label class="et">Link del script (termina en /exec)</label><input type="url" id="aUrl" value="'+esc(S.config.url)+'" placeholder="https://script.google.com/macros/s/…/exec">'+
     '<label class="et">Clave</label><input type="password" id="aClave" value="'+esc(S.config.clave)+'" autocomplete="off" placeholder="Pegá la clave del menú Relevamiento">'+
     '<button class="boton ancho" id="aGuardar" style="margin-top:12px">Vincular y descargar datos</button></div>';
@@ -578,6 +597,7 @@ function vAyuda(){
   setBarra('Ayuda','Cómo usar la app',true); setPie('');
   const p=(t,x)=>'<div class="tarjeta"><b>'+t+'</b><p style="margin:6px 0 0">'+x+'</p></div>';
   $('#vista').innerHTML =
+    p('0. Instalar la app','Tocá «Instalar» (o el botón ⤓ de arriba). En Android/PC se instala con un toque. En iPhone: botón Compartir › «Agregar a inicio». Queda con su ícono y abre sin señal.')+
     p('1. Elegí el edificio','En la lista los edificios se ordenan por los datos que les faltan. «Cerca mío» los ordena por distancia usando el GPS.')+
     p('2. Fecha e informante','En la ficha del edificio cargá la fecha de la visita y el nombre y cargo de quien te informa. Se usan para todos los datos de esa visita.')+
     p('3. Elegí qué vas a cargar','<b>Recorrido</b>: lo que se observa o mide, en el orden en que recorrés el edificio. <b>Entrevista</b>: las preguntas al responsable. <b>Documentos</b> y <b>De la base</b>: lo que sale de papeles o de otros módulos. <b>Mínimos</b>: solo los irrenunciables. <b>Todo</b>: la lista completa.')+

@@ -1,6 +1,6 @@
 /* Service worker · App de relevamiento de edificios v0
    Guarda la app en el dispositivo para que abra sin señal. */
-const CACHE = 'relevamiento-v0-7';
+const CACHE = 'relevamiento-v0-8';
 const BASE = ['./', './index.html', './manifest.json', './logo-hysl.png', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
