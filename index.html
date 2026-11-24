@@ -68,6 +68,7 @@
   .item.e-noaplica,.item.e-sd{border-left-color:#9aa5ad}
   .item .cod{font-weight:700;color:var(--patagonia);font-size:13px}
   .item .titulo{font-weight:700;color:var(--azul);margin:2px 0 4px}
+  .chip.ok{background:var(--cumple);color:var(--cumple-t);border-color:#a9d8b5}
   .anterior{background:var(--fondo);border-radius:10px;padding:10px;margin:10px 0;font-size:14px}
   .anterior .suave{font-size:12px}
   .estados{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
@@ -222,6 +223,13 @@ const guardarBorradores = (()=>{ let t; return ()=>{ clearTimeout(t); t=setTimeo
 function borrador(cod){
   if(!S.borradores[cod]) S.borradores[cod]={edificio:cod, fecha:hoy(), informante:'', respuestas:{}, creado:new Date().toISOString()};
   return S.borradores[cod];
+}
+/* Un ítem ya está relevado si su último dato en VISITAS fue confirmado o cargado en una visita
+   (no cuentan los precargados del puente ni del Dx CAPS 2025, que esperan confirmación). */
+function ultimoDe(cod,item){ return S.datos && S.datos.ultimos ? S.datos.ultimos[cod+'|'+item] : null; }
+function registrado(cod,item){
+  const u=ultimoDe(cod,item);
+  return !!(u && u.dato && u.fuente && !/puente|Dx CAPS|autodeclarado/i.test(u.fuente));
 }
 function itemsDe(ed){
   if(!S.datos) return [];
@@ -379,7 +387,7 @@ function vEdificio(){
   h+='<div class="tarjeta"><label class="et" style="margin-top:0">Fecha de la visita</label><input type="date" id="fFecha" value="'+esc(b.fecha)+'">'+
      '<label class="et">Entrevistado / informante (nombre y cargo)</label><input type="text" id="fInf" value="'+esc(b.informante)+'" placeholder="Ej.: Lic. … · responsable del CAPS"></div>';
   h+='<h3>¿Qué vas a cargar?</h3><div class="modos">'+Object.entries(MODOS).map(([k,mo])=>{
-    const lista=its.filter(mo.filtro), hechos=lista.filter(i=>resp[i.codigo]?.estado).length;
+    const lista=its.filter(mo.filtro), hechos=lista.filter(i=>resp[i.codigo]?.estado || registrado(e.codigo,i.codigo)).length;
     return '<button class="modo" data-modo="'+k+'"><b>'+mo.nombre+'</b><span>'+mo.desc+'</span><span class="cuenta">'+hechos+' / '+lista.length+'</span></button>';
   }).join('')+'</div>';
   const n=Object.values(resp).filter(r=>r.estado).length;
@@ -421,18 +429,20 @@ function aplicarFiltroPend(){
   document.querySelectorAll('.item').forEach(c=>c.classList.toggle('oculto', S.soloPend && c.dataset.hecho==='1'));
 }
 function actualizarPieCarga(its,b){
-  const hechos=its.filter(i=>b.respuestas[i.codigo]?.estado).length, p=its.length?Math.round(hechos/its.length*100):0;
+  const hechos=its.filter(i=>b.respuestas[i.codigo]?.estado || registrado(b.edificio,i.codigo)).length, p=its.length?Math.round(hechos/its.length*100):0;
   setPie('<div class="crece"><div class="suave">'+hechos+' de '+its.length+' ítems</div><div class="avance"><i style="width:'+p+'%"></i></div></div><button class="boton sec" onclick="history.back()">Listo</button>');
 }
 function tarjetaItem(e,i,b){
   const r=b.respuestas[i.codigo]||{}, ult=S.datos.ultimos[e.codigo+'|'+i.codigo];
   const campos=parsearCampos(i.campos);
-  let h='<div class="tarjeta item '+claseEstado(r.estado)+'" id="it-'+i.codigo+'" data-hecho="'+(r.estado?'1':'0')+'">';
-  h+='<div class="fila"><span class="cod">'+esc(i.codigo)+'</span>'+(i.minimo==='Sí'?'<span class="chip rojo">Mínimo</span>':'')+'<span class="chip">'+esc(i.capa)+'</span></div>';
+  const reg=registrado(e.codigo,i.codigo);
+  let h='<div class="tarjeta item '+claseEstado(r.estado||(reg?ult.estado:''))+'" id="it-'+i.codigo+'" data-hecho="'+((r.estado||reg)?'1':'0')+'">';
+  h+='<div class="fila"><span class="cod">'+esc(i.codigo)+'</span>'+(i.minimo==='Sí'?'<span class="chip rojo">Mínimo</span>':'')+'<span class="chip">'+esc(i.capa)+'</span>'+
+    (reg?'<span class="chip ok">✓ '+(/confirmado/i.test(ult.fuente)?'Confirmado':'Relevado')+' el '+esc(ult.fecha)+'</span>':'')+'</div>';
   h+='<div class="titulo">'+esc(i.item)+'</div><div class="suave">'+esc(i.donde)+'</div>';
   if(ult && ult.dato){
     h+='<div class="anterior"><div class="suave">Último dato · '+esc(ult.fecha)+' · '+esc(ult.fuente)+' · '+esc(ult.estado)+'</div><div>'+esc(ult.dato)+'</div>'+
-      '<button class="boton sec ancho" style="margin-top:8px" data-acc="confirmar">'+(r.confirmado?'✓ Confirmado (tocá para deshacer)':'Lo revisé: confirmo este dato')+'</button></div>';
+      '<button class="boton sec ancho" style="margin-top:8px" data-acc="confirmar">'+(r.confirmado?'✓ Confirmado (tocá para deshacer)':(reg?'Volver a confirmar hoy':'Lo revisé: confirmo este dato'))+'</button></div>';
   }
   h+='<div class="campos'+(r.confirmado?' oculto':'')+'">'+campos.map(c=>campoHtml(c,(r.valores||{})[c.id])).join('')+'</div>';
   h+='<label class="et">Estado</label><div class="estados">'+['Cumple','Parcial','No cumple','No aplica','s/d','A verificar'].map(s=>'<button class="est'+(r.estado===s?' on':'')+'" data-v="'+s+'">'+s+'</button>').join('')+'</div>';
@@ -472,7 +482,8 @@ function conectarItem(e,i,b,mo){
     guardarBorradores();
   };
   const pintarItem=(card,x)=>{
-    card.className='tarjeta item '+claseEstado(x.estado); card.dataset.hecho = x.estado?'1':'0';
+    const reg=registrado(e.codigo,i.codigo), u=ultimoDe(e.codigo,i.codigo);
+    card.className='tarjeta item '+claseEstado(x.estado||(reg?u.estado:'')); card.dataset.hecho = (x.estado||reg)?'1':'0';
     card.querySelectorAll('.est').forEach(bt=>bt.classList.toggle('on', bt.dataset.v===x.estado));
     card.querySelectorAll('.fuente button').forEach(bt=>bt.classList.toggle('on', bt.dataset.f===x.fuente));
     campos.forEach(c=>{ const el=card.querySelector('[data-c="'+c.id+'"] .regla'); if(!el) return; const n=evaluar(c,x.valores[c.id]); el.className='regla'+(n===1?' bien':n===0?' mal':''); });
@@ -499,7 +510,7 @@ function conectarItem(e,i,b,mo){
   if(conf) conf.onclick=()=>{
     const x=r(), ult=S.datos.ultimos[e.codigo+'|'+i.codigo];
     x.confirmado=!x.confirmado; x.datoAnterior= x.confirmado ? ult.dato : '';
-    conf.textContent = x.confirmado ? '✓ Confirmado (tocá para deshacer)' : 'Lo revisé: confirmo este dato';
+    conf.textContent = x.confirmado ? '✓ Confirmado (tocá para deshacer)' : (registrado(e.codigo,i.codigo) ? 'Volver a confirmar hoy' : 'Lo revisé: confirmo este dato');
     card.querySelector('.campos').classList.toggle('oculto', x.confirmado);
     if(x.confirmado && !x.estado) toast('Elegí el estado de este ítem');
     pintarItem(card,x); guardarBorradores();
